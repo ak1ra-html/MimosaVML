@@ -1,48 +1,42 @@
 import { useState } from 'react'
-import { supabase, safeUrl } from '../lib/supabase.js'
+import { supabase } from '../lib/supabase.js'
+import { uploadImage } from '../lib/helpers.js'
+import VariantManager from './VariantManager.jsx'
 
-const EMPTY = { title: '', replace_name: '', description: '', thumbnail_url: '', download_url: '' }
+const EMPTY = { title: '', description: '', thumbnail_url: '' }
 
 export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
   const [form, setForm] = useState(EMPTY)
   const [editingId, setEditingId] = useState(null)
+  const [managingId, setManagingId] = useState(null)
   const [file, setFile] = useState(null)
+  const [inputKey, setInputKey] = useState(0)
   const [busy, setBusy] = useState(false)
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
 
+  const managing = scripts.find((s) => s.id === managingId)
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   function reset() {
     setForm(EMPTY)
     setEditingId(null)
     setFile(null)
-    setError('')
+    setInputKey((k) => k + 1)
   }
 
   function startEdit(item) {
     setEditingId(item.id)
     setFile(null)
+    setInputKey((k) => k + 1)
     setError('')
     setMessage('')
     setForm({
       title: item.title || '',
-      replace_name: item.replace_name || '',
       description: item.description || '',
       thumbnail_url: item.thumbnail_url || '',
-      download_url: item.download_url || '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
-  }
-
-  async function uploadThumbnail() {
-    const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
-    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
-    const { error: upError } = await supabase.storage
-      .from('thumbnails')
-      .upload(path, file, { cacheControl: '31536000', contentType: file.type })
-    if (upError) throw upError
-    return supabase.storage.from('thumbnails').getPublicUrl(path).data.publicUrl
   }
 
   async function submit(e) {
@@ -50,41 +44,36 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
     setError('')
     setMessage('')
 
-    if (!safeUrl(form.download_url)) {
-      setError('Link download harus diawali http:// atau https://')
-      return
-    }
     if (!file && !form.thumbnail_url) {
       setError('Pilih gambar thumbnail dulu.')
-      return
-    }
-    if (file && file.size > 3 * 1024 * 1024) {
-      setError('Ukuran gambar maksimal 3 MB.')
       return
     }
 
     setBusy(true)
     try {
       let thumbnail_url = form.thumbnail_url || null
-      if (file) thumbnail_url = await uploadThumbnail()
+      if (file) thumbnail_url = await uploadImage(file)
 
       const payload = {
         title: form.title.trim(),
-        replace_name: form.replace_name.trim() || null,
         description: form.description.trim() || null,
         thumbnail_url,
-        download_url: form.download_url.trim(),
       }
 
-      const query = editingId
-        ? supabase.from('scripts').update(payload).eq('id', editingId)
-        : supabase.from('scripts').insert(payload)
-      const { error: dbError } = await query
-      if (dbError) throw dbError
-
-      setMessage(editingId ? 'Script berhasil diperbarui.' : 'Script berhasil ditambahkan.')
-      reset()
-      await onChanged()
+      if (editingId) {
+        const { error: dbError } = await supabase.from('scripts').update(payload).eq('id', editingId)
+        if (dbError) throw dbError
+        setMessage('Script diperbarui.')
+        reset()
+        await onChanged()
+      } else {
+        const { data, error: dbError } = await supabase.from('scripts').insert(payload).select().single()
+        if (dbError) throw dbError
+        reset()
+        await onChanged()
+        setManagingId(data.id)
+        setMessage('Script ditambahkan. Sekarang tambahkan replace-nya di bawah.')
+      }
     } catch (err) {
       setError(err.message || 'Gagal menyimpan.')
     } finally {
@@ -93,13 +82,15 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
   }
 
   async function remove(item) {
-    if (!window.confirm(`Hapus "${item.title}"?`)) return
+    if (!window.confirm(`Hapus "${item.title}" beserta semua replace-nya?`)) return
     const { error: dbError } = await supabase.from('scripts').delete().eq('id', item.id)
     if (dbError) {
       setError(dbError.message)
       return
     }
     if (editingId === item.id) reset()
+    if (managingId === item.id) setManagingId(null)
+    setError('')
     setMessage('Script dihapus.')
     await onChanged()
   }
@@ -117,35 +108,19 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
       <form className="admin-form" onSubmit={submit}>
         <h3>{editingId ? 'Edit script' : 'Tambah script baru'}</h3>
 
-        <div className="grid2">
-          <label>
-            Judul script
-            <input value={form.title} onChange={set('title')} placeholder="Script Fanny Legend" required />
-          </label>
-          <label>
-            Replace
-            <input value={form.replace_name} onChange={set('replace_name')} placeholder="Elite" />
-          </label>
-        </div>
-
         <label>
-          Link download
-          <input value={form.download_url} onChange={set('download_url')} placeholder="https://..." required />
+          Judul script
+          <input value={form.title} onChange={set('title')} placeholder="Fanny Legend" required />
         </label>
 
         <label>
           Deskripsi (opsional)
-          <textarea rows="3" value={form.description} onChange={set('description')} />
+          <textarea rows="2" value={form.description} onChange={set('description')} />
         </label>
 
         <label>
           {editingId ? 'Ganti thumbnail (opsional)' : 'Upload thumbnail'}
-          <input
-            key={editingId || 'new'}
-            type="file"
-            accept="image/*"
-            onChange={(e) => setFile(e.target.files?.[0] || null)}
-          />
+          <input key={inputKey} type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </label>
         {editingId && form.thumbnail_url && !file && (
           <img className="thumb-preview" src={form.thumbnail_url} alt="Thumbnail saat ini" />
@@ -162,15 +137,25 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
         </div>
       </form>
 
+      {managing && (
+        <VariantManager
+          key={managing.id}
+          script={managing}
+          onChanged={onChanged}
+          onClose={() => setManagingId(null)}
+        />
+      )}
+
       <div className="admin-list">
         {scripts.map((item) => (
           <div className="admin-item" key={item.id}>
             {item.thumbnail_url ? <img src={item.thumbnail_url} alt="" /> : <div className="mini-empty" />}
             <div className="admin-item-text">
               <strong>{item.title}</strong>
-              <span>{item.replace_name ? `Replace ${item.replace_name}` : '-'}</span>
+              <span>{(item.script_variants || []).length} replace</span>
             </div>
             <div className="row">
+              <button className="btn btn-primary" onClick={() => { setManagingId(item.id); setMessage('') }}>Replace</button>
               <button className="btn" onClick={() => startEdit(item)}>Edit</button>
               <button className="btn btn-danger" onClick={() => remove(item)}>Hapus</button>
             </div>
