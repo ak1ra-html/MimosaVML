@@ -145,7 +145,7 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        <p>MimosaVML. Gunakan dengan risiko sendiri.</p>
+        <p>MimosaVML.</p>
       </footer>
 
       {openScript && (
