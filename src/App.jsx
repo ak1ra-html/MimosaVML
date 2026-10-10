@@ -84,7 +84,7 @@ export default function App() {
       <header className="top">
         <div className="logo" onClick={onLogoTap} role="img" aria-label="Script ML Hub">
           <span className="logo-mark">S</span>
-          <span className="logo-text">Script ML <b>Hub</b></span>
+          <span className="logo-text">MimosaVML</b></span>
         </div>
         <input
           className="search"
@@ -125,7 +125,7 @@ export default function App() {
       </main>
 
       <footer className="foot">
-        <p>Script ML Hub. Gunakan dengan risiko sendiri.</p>
+        <p>MimosaVML</p>
       </footer>
 
       {showLogin && (
