@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { uploadImage } from '../lib/helpers.js'
+import { uploadImage, normalizeUrl, getYouTubeId } from '../lib/helpers.js'
 import VariantManager from './VariantManager.jsx'
 import RequestsManager from './RequestsManager.jsx'
 
-const EMPTY = { title: '', description: '', thumbnail_url: '', status: 'published', release_note: '' }
+const EMPTY = { title: '', description: '', youtube_url: '', thumbnail_url: '', status: 'published', release_note: '' }
 
 export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
   const [tab, setTab] = useState('scripts')
@@ -47,6 +47,7 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
     setForm({
       title: item.title || '',
       description: item.description || '',
+      youtube_url: item.youtube_url || '',
       thumbnail_url: item.thumbnail_url || '',
       status: item.status || 'published',
       release_note: item.release_note || '',
@@ -64,6 +65,12 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
       return
     }
 
+    const ytRaw = form.youtube_url.trim()
+    if (ytRaw && !getYouTubeId(ytRaw)) {
+      setError('Link YouTube tidak valid. Contoh: https://youtu.be/xxxxxxxxxxx')
+      return
+    }
+
     setBusy(true)
     try {
       let thumbnail_url = form.thumbnail_url || null
@@ -73,6 +80,7 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
       const payload = {
         title: form.title.trim(),
         description: form.description.trim() || null,
+        youtube_url: ytRaw ? normalizeUrl(ytRaw) : null,
         thumbnail_url,
         status: form.status,
         release_note: upcoming ? form.release_note.trim() || null : null,
@@ -187,7 +195,26 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
 
             <label>
               Deskripsi (opsional)
-              <textarea rows="2" value={form.description} onChange={set('description')} />
+              <textarea
+                className="desc-input"
+                rows="5"
+                value={form.description}
+                onChange={set('description')}
+                placeholder={'Tulis deskripsi. Tekan Enter untuk baris baru,\nkosongkan satu baris untuk jarak antar paragraf.'}
+              />
+            </label>
+
+            <label>
+              Link video YouTube (opsional)
+              <input
+                type="url"
+                value={form.youtube_url}
+                onChange={set('youtube_url')}
+                placeholder="https://youtu.be/xxxxxxxxxxx"
+              />
+              {form.youtube_url.trim() && !getYouTubeId(form.youtube_url) && (
+                <span className="error">Link belum dikenali sebagai video YouTube.</span>
+              )}
             </label>
 
             <label>

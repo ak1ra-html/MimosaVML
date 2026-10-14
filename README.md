@@ -9,12 +9,14 @@ Web katalog download script ML: thumbnail skin, judul script, nama replace, dan 
 - Penghitung jumlah download
 - Upcoming: script yang belum rilis tampil di bagian "Segera hadir" tanpa tombol download. Saat sudah siap, tekan tombol **Rilis** di panel admin
 - Request Script: pengunjung mengirim request lewat tombol di header. Admin membacanya di tab **Request** (status Baru, Diproses, Selesai). Request tidak bisa dibaca publik
+- Preview video YouTube: isi link YouTube di form script, maka di jendela detail muncul pemutar video (dimuat saat diklik, jadi halaman tetap ringan)
+- Deskripsi mendukung baris baru dan paragraf (tekan Enter saat menulis)
 - Admin tersembunyi: tambah, edit, hapus script, upload thumbnail
 
 ## 1. Setup Supabase
 
 1. Buat project di https://supabase.com
-2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace), lalu `supabase/03-upcoming-requests.sql` (fitur Upcoming dan Request Script)
+2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace), lalu `supabase/03-upcoming-requests.sql` (fitur Upcoming dan Request Script), dan terakhir `supabase/04-youtube-preview.sql` (kolom link YouTube)
 3. Buka **Authentication > Users > Add user**, buat akun admin (email + password). Centang auto-confirm
 4. Kembali ke SQL Editor, daftarkan akun itu sebagai admin (ganti emailnya):
 
@@ -56,7 +58,8 @@ src/
   App.jsx                  halaman utama + tombol rahasia
   components/
     ScriptCard.jsx         kartu script
-    ScriptModal.jsx        daftar replace + tombol download
+    ScriptModal.jsx        daftar replace + tombol download + preview video
+    YouTubePreview.jsx     pemutar YouTube (klik untuk memuat)
     AdminLogin.jsx         form login admin
     AdminPanel.jsx         tambah / edit / hapus script
     VariantManager.jsx     tambah / edit / hapus replace per script
@@ -65,4 +68,5 @@ src/
 supabase/schema.sql        tabel, RLS, storage
 supabase/02-replace-variants.sql   tabel replace (varian)
 supabase/03-upcoming-requests.sql  status upcoming + tabel request script
+supabase/04-youtube-preview.sql    kolom link YouTube
 ```

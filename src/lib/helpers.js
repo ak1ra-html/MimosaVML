@@ -35,3 +35,25 @@ export async function uploadImage(raw) {
   if (error) throw error
   return supabase.storage.from('thumbnails').getPublicUrl(path).data.publicUrl
 }
+
+// Ambil ID video dari link YouTube (watch, youtu.be, shorts, embed, live). Kembalikan null kalau bukan YouTube.
+export function getYouTubeId(value) {
+  if (!value) return null
+  try {
+    const u = new URL(normalizeUrl(value))
+    const host = u.hostname.replace(/^(www\.|m\.|music\.)/, '')
+    let id = null
+    if (host === 'youtu.be') {
+      id = u.pathname.slice(1).split('/')[0]
+    } else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
+      if (u.pathname === '/watch') id = u.searchParams.get('v')
+      else {
+        const m = u.pathname.match(/^\/(?:embed|shorts|live|v)\/([^/?#]+)/)
+        if (m) id = m[1]
+      }
+    }
+    return id && /^[\w-]{11}$/.test(id) ? id : null
+  } catch {
+    return null
+  }
+}

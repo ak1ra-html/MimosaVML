@@ -1,8 +1,11 @@
 import { useEffect } from 'react'
 import { safeUrl } from '../lib/supabase.js'
+import { getYouTubeId } from '../lib/helpers.js'
+import YouTubePreview from './YouTubePreview.jsx'
 
 export default function ScriptModal({ script, onClose, onDownload }) {
   const variants = script.script_variants || []
+  const videoId = getYouTubeId(script.youtube_url)
 
   useEffect(() => {
     const onKey = (e) => {
@@ -22,6 +25,8 @@ export default function ScriptModal({ script, onClose, onDownload }) {
           </div>
           <button className="btn" onClick={onClose}>Tutup</button>
         </div>
+
+        {videoId && <YouTubePreview videoId={videoId} title={script.title} />}
 
         <div className="variant-list">
           {variants.map((v) => {
