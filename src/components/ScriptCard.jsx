@@ -2,7 +2,6 @@ import { getYouTubeId } from '../lib/helpers.js'
 
 export default function ScriptCard({ item, onOpen }) {
   const variants = item.script_variants || []
-  const total = variants.reduce((n, v) => n + (v.downloads ?? 0), 0)
   const cover = item.thumbnail_url || variants.find((v) => v.thumbnail_url)?.thumbnail_url
   const shown = variants.slice(0, 3)
 
@@ -17,7 +16,7 @@ export default function ScriptCard({ item, onOpen }) {
     <article className="card card-click" role="button" tabIndex={0} onClick={() => onOpen(item)} onKeyDown={onKey}>
       <div className="card-thumb">
         {cover ? <img src={cover} alt={item.title} loading="lazy" /> : <div className="thumb-empty">Tanpa gambar</div>}
-        {getYouTubeId(item.youtube_url) && <span className="badge-video">▶ Video</span>}
+        {getYouTubeId(item.youtube_url) && <span className="badge-video">▶ Preview</span>}
         <span className="badge">{variants.length ? `${variants.length} replace` : 'Belum ada replace'}</span>
       </div>
 
@@ -35,7 +34,6 @@ export default function ScriptCard({ item, onOpen }) {
         )}
 
         <div className="card-foot">
-          <span className="count">{total} download</span>
           <span className="btn btn-primary">Lihat replace</span>
         </div>
       </div>

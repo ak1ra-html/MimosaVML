@@ -80,14 +80,6 @@ export default function App() {
   }
 
   function handleDownload(variant) {
-    setScripts((list) =>
-      list.map((s) => ({
-        ...s,
-        script_variants: s.script_variants.map((v) =>
-          v.id === variant.id ? { ...v, downloads: (v.downloads ?? 0) + 1 } : v
-        ),
-      }))
-    )
     // Query Supabase baru dikirim saat .then() dipanggil, jadi wajib ada.
     supabase.rpc('increment_variant_downloads', { variant_id: variant.id }).then(({ error }) => {
       if (error) console.error('Gagal mencatat download:', error.message)

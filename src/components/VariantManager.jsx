@@ -135,7 +135,6 @@ export default function VariantManager({ script, onChanged, onClose }) {
             {v.thumbnail_url ? <img src={v.thumbnail_url} alt="" /> : <div className="mini-empty" />}
             <div className="admin-item-text">
               <strong>Replace {v.replace_name}</strong>
-              <span>{v.downloads ?? 0} download</span>
             </div>
             <div className="row">
               <button className="btn" onClick={() => startEdit(v)}>Edit</button>

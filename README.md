@@ -6,10 +6,9 @@ Web katalog download script ML: thumbnail skin, judul script, nama replace, dan 
 
 - Satu kartu per script (mis. "Fanny Legend"). Saat diklik muncul daftar replace (Elite, dll), masing-nya dengan gambar skin dan tombol download
 - Pencarian berdasarkan judul atau replace
-- Penghitung jumlah download
 - Upcoming: script yang belum rilis tampil di bagian "Segera hadir" tanpa tombol download. Saat sudah siap, tekan tombol **Rilis** di panel admin
 - Request Script: pengunjung mengirim request lewat tombol di header. Admin membacanya di tab **Request** (status Baru, Diproses, Selesai). Request tidak bisa dibaca publik
-- Preview video YouTube: isi link YouTube di form script, maka di jendela detail muncul pemutar video (dimuat saat diklik, jadi halaman tetap ringan)
+- Preview video YouTube: isi link YouTube di form script, maka di jendela detail muncul pemutar video (dimuat saat diklik, jadi halaman tetap ringan). Kartu yang punya video diberi label "Preview" di pojok kanan bawah gambar
 - Deskripsi mendukung baris baru dan paragraf (tekan Enter saat menulis)
 - Admin tersembunyi: tambah, edit, hapus script, upload thumbnail
 

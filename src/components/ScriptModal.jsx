@@ -41,7 +41,6 @@ export default function ScriptModal({ script, onClose, onDownload }) {
                 )}
                 <div className="variant-text">
                   <strong>Replace {v.replace_name}</strong>
-                  <span>{v.downloads ?? 0} download</span>
                 </div>
                 {link ? (
                   <a
