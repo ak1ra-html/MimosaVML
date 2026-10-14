@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 
 const LABEL = { new: 'Baru', processing: 'Diproses', done: 'Selesai' }
@@ -16,7 +16,7 @@ export default function RequestsManager({ onCount }) {
   const [rows, setRows] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [filter, setFilter] = useState('all')
+  const [filter, setFilter] = useState('open')
 
   const load = useCallback(async () => {
     const { data, error: dbError } = await supabase
@@ -36,16 +36,6 @@ export default function RequestsManager({ onCount }) {
     load()
   }, [load])
 
-  // Nomor mengikuti urutan masuk: request pertama = No. 1, dan tidak berubah saat difilter.
-  const numbered = useMemo(
-    () => [...rows].sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((r, i) => ({ ...r, no: i + 1 })),
-    [rows]
-  )
-  const list = useMemo(() => [...numbered].reverse(), [numbered]) // terbaru di atas
-
-  const count = (s) => rows.filter((r) => r.status === s).length
-  const shown = filter === 'all' ? list : list.filter((r) => r.status === filter)
-
   async function cycle(row) {
     const { error: dbError } = await supabase
       .from('script_requests')
@@ -56,32 +46,29 @@ export default function RequestsManager({ onCount }) {
   }
 
   async function remove(row) {
-    if (!window.confirm(`Hapus request No. ${row.no}?`)) return
+    if (!window.confirm('Hapus request ini?')) return
     const { error: dbError } = await supabase.from('script_requests').delete().eq('id', row.id)
     if (dbError) setError(dbError.message)
     else load()
   }
 
-  const filters = [
-    ['all', `Semua (${rows.length})`],
-    ['new', `Baru (${count('new')})`],
-    ['processing', `Diproses (${count('processing')})`],
-    ['done', `Selesai (${count('done')})`],
-  ]
+  const shown = rows.filter((r) => (filter === 'open' ? r.status !== 'done' : filter === 'done' ? r.status === 'done' : true))
 
   return (
     <div className="variants-box">
-      <div className="req-total">
-        <span className="req-total-num">{rows.length}</span>
-        <span>total request masuk</span>
-      </div>
-
-      <div className="row row-left">
-        {filters.map(([key, label]) => (
-          <button key={key} className={`btn ${filter === key ? 'btn-primary' : ''}`} onClick={() => setFilter(key)}>
-            {label}
-          </button>
-        ))}
+      <div className="admin-head">
+        <h3>Request masuk</h3>
+        <div className="row">
+          {[
+            ['open', 'Belum selesai'],
+            ['done', 'Selesai'],
+            ['all', 'Semua'],
+          ].map(([key, label]) => (
+            <button key={key} className={`btn ${filter === key ? 'btn-primary' : ''}`} onClick={() => setFilter(key)}>
+              {label}
+            </button>
+          ))}
+        </div>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -90,13 +77,15 @@ export default function RequestsManager({ onCount }) {
       <div className="admin-list">
         {shown.map((r) => (
           <div className={`req req-${r.status}`} key={r.id}>
-            <span className="req-no">#{r.no}</span>
             <div className="req-main">
               <p className="req-text">{r.request_text}</p>
-              <span className="req-meta">{fmt(r.created_at)}</span>
+              <span className="req-meta">
+                {r.requester_name || 'Anonim'}
+                {r.contact ? ` • ${r.contact}` : ''} • {fmt(r.created_at)}
+              </span>
             </div>
             <div className="row">
-              <button className="btn" onClick={() => cycle(r)} title="Klik untuk ganti status">
+              <button className="btn" onClick={() => cycle(r)} title="Ubah status">
                 {LABEL[r.status]}
               </button>
               <button className="btn btn-danger" onClick={() => remove(r)}>Hapus</button>

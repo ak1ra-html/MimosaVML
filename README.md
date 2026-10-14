@@ -4,15 +4,17 @@ Web katalog download script ML: thumbnail skin, judul script, nama replace, dan 
 
 ## Fitur
 
-- Daftar script berbentuk kartu: gambar, judul (mis. "Script Fanny Legend"), badge replace (mis. "Replace Elite"), tombol download
+- Satu kartu per script (mis. "Fanny Legend"). Saat diklik muncul daftar replace (Elite, dll), masing-nya dengan gambar skin dan tombol download
 - Pencarian berdasarkan judul atau replace
 - Penghitung jumlah download
+- Upcoming: script yang belum rilis tampil di bagian "Segera hadir" tanpa tombol download. Saat sudah siap, tekan tombol **Rilis** di panel admin
+- Request Script: pengunjung mengirim request lewat tombol di header. Admin membacanya di tab **Request** (status Baru, Diproses, Selesai). Request tidak bisa dibaca publik
 - Admin tersembunyi: tambah, edit, hapus script, upload thumbnail
 
 ## 1. Setup Supabase
 
 1. Buat project di https://supabase.com
-2. Buka **SQL Editor**, tempel seluruh isi `supabase/schema.sql`, lalu **Run**
+2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace), lalu `supabase/03-upcoming-requests.sql` (fitur Upcoming dan Request Script)
 3. Buka **Authentication > Users > Add user**, buat akun admin (email + password). Centang auto-confirm
 4. Kembali ke SQL Editor, daftarkan akun itu sebagai admin (ganti emailnya):
 
@@ -54,8 +56,13 @@ src/
   App.jsx                  halaman utama + tombol rahasia
   components/
     ScriptCard.jsx         kartu script
+    ScriptModal.jsx        daftar replace + tombol download
     AdminLogin.jsx         form login admin
     AdminPanel.jsx         tambah / edit / hapus script
+    VariantManager.jsx     tambah / edit / hapus replace per script
   lib/supabase.js          klien Supabase
+  lib/helpers.js           upload gambar, normalisasi link
 supabase/schema.sql        tabel, RLS, storage
+supabase/02-replace-variants.sql   tabel replace (varian)
+supabase/03-upcoming-requests.sql  status upcoming + tabel request script
 ```

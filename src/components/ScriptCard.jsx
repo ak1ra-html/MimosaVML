@@ -1,38 +1,39 @@
-import { safeUrl } from '../lib/supabase.js'
+export default function ScriptCard({ item, onOpen }) {
+  const variants = item.script_variants || []
+  const total = variants.reduce((n, v) => n + (v.downloads ?? 0), 0)
+  const cover = item.thumbnail_url || variants.find((v) => v.thumbnail_url)?.thumbnail_url
+  const shown = variants.slice(0, 3)
 
-export default function ScriptCard({ item, onDownload }) {
-  const link = safeUrl(item.download_url)
+  function onKey(e) {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault()
+      onOpen(item)
+    }
+  }
 
   return (
-    <article className="card">
+    <article className="card card-click" role="button" tabIndex={0} onClick={() => onOpen(item)} onKeyDown={onKey}>
       <div className="card-thumb">
-        {item.thumbnail_url ? (
-          <img src={item.thumbnail_url} alt={`${item.title} ${item.replace_name || ''}`} loading="lazy" />
-        ) : (
-          <div className="thumb-empty">Tanpa gambar</div>
-        )}
-        {item.replace_name && <span className="badge">Replace {item.replace_name}</span>}
+        {cover ? <img src={cover} alt={item.title} loading="lazy" /> : <div className="thumb-empty">Tanpa gambar</div>}
+        <span className="badge">{variants.length ? `${variants.length} replace` : 'Belum ada replace'}</span>
       </div>
 
       <div className="card-body">
         <h3>{item.title}</h3>
         {item.description && <p className="desc">{item.description}</p>}
 
+        {shown.length > 0 && (
+          <div className="chips">
+            {shown.map((v) => (
+              <span className="chip" key={v.id}>{v.replace_name}</span>
+            ))}
+            {variants.length > shown.length && <span className="chip">+{variants.length - shown.length}</span>}
+          </div>
+        )}
+
         <div className="card-foot">
-          <span className="count">{item.downloads ?? 0} download</span>
-          {link ? (
-            <a
-              className="btn btn-primary"
-              href={link}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => onDownload(item)}
-            >
-              Download
-            </a>
-          ) : (
-            <span className="count">Link tidak valid</span>
-          )}
+          <span className="count">{total} download</span>
+          <span className="btn btn-primary">Lihat replace</span>
         </div>
       </div>
     </article>
