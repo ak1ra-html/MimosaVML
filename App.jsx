@@ -85,7 +85,10 @@ export default function App() {
         ),
       }))
     )
-    supabase.rpc('increment_variant_downloads', { variant_id: variant.id })
+    // Query Supabase baru dikirim saat .then() dipanggil, jadi wajib ada.
+    supabase.rpc('increment_variant_downloads', { variant_id: variant.id }).then(({ error }) => {
+      if (error) console.error('Gagal mencatat download:', error.message)
+    })
   }
 
   const filtered = useMemo(() => {
