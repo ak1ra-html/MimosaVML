@@ -3,6 +3,30 @@ import { supabase, safeUrl } from '../lib/supabase.js'
 
 const EMPTY = { title: '', replace_name: '', description: '', thumbnail_url: '', download_url: '' }
 
+// Tambahkan https:// otomatis kalau link diketik tanpa awalan.
+function normalizeUrl(value) {
+  const v = value.trim()
+  if (!v) return v
+  return /^[a-z][a-z0-9+.-]*:/i.test(v) ? v : `https://${v}`
+}
+
+// Perkecil gambar besar (mis. wallpaper 4K) sebelum diupload, supaya semua gambar bisa dipakai.
+async function prepareImage(file) {
+  if (!file.type.startsWith('image/') || file.type === 'image/gif' || file.type === 'image/svg+xml') return file
+  try {
+    const bitmap = await createImageBitmap(file)
+    const scale = Math.min(1, 1600 / Math.max(bitmap.width, bitmap.height))
+    const canvas = document.createElement('canvas')
+    canvas.width = Math.round(bitmap.width * scale)
+    canvas.height = Math.round(bitmap.height * scale)
+    canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height)
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/webp', 0.85))
+    return blob ? new File([blob], 'thumb.webp', { type: 'image/webp' }) : file
+  } catch {
+    return file
+  }
+}
+
 export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
   const [form, setForm] = useState(EMPTY)
   const [editingId, setEditingId] = useState(null)
@@ -35,7 +59,8 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  async function uploadThumbnail() {
+  async function uploadThumbnail(raw) {
+    const file = await prepareImage(raw)
     const ext = (file.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '')
     const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`
     const { error: upError } = await supabase.storage
@@ -50,26 +75,27 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
     setError('')
     setMessage('')
 
-    if (!safeUrl(form.download_url)) {
-      setError('Link download harus diawali http:// atau https://')
+    const downloadUrl = safeUrl(normalizeUrl(form.download_url))
+    if (!downloadUrl) {
+      setError('Link download tidak valid.')
       return
     }
-    if (file && file.size > 3 * 1024 * 1024) {
-      setError('Ukuran gambar maksimal 3 MB.')
+    if (!file && !form.thumbnail_url) {
+      setError('Pilih gambar thumbnail dulu.')
       return
     }
 
     setBusy(true)
     try {
-      let thumbnail_url = form.thumbnail_url.trim() || null
-      if (file) thumbnail_url = await uploadThumbnail()
+      let thumbnail_url = form.thumbnail_url || null
+      if (file) thumbnail_url = await uploadThumbnail(file)
 
       const payload = {
         title: form.title.trim(),
         replace_name: form.replace_name.trim() || null,
         description: form.description.trim() || null,
         thumbnail_url,
-        download_url: form.download_url.trim(),
+        download_url: downloadUrl,
       }
 
       const query = editingId
@@ -134,16 +160,18 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
           <textarea rows="3" value={form.description} onChange={set('description')} />
         </label>
 
-        <div className="grid2">
-          <label>
-            Upload thumbnail
-            <input type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-          </label>
-          <label>
-            atau URL gambar
-            <input value={form.thumbnail_url} onChange={set('thumbnail_url')} placeholder="https://..." />
-          </label>
-        </div>
+        <label>
+          {editingId ? 'Ganti thumbnail (opsional)' : 'Upload thumbnail'}
+          <input
+            key={editingId || 'new'}
+            type="file"
+            accept="image/*"
+            onChange={(e) => setFile(e.target.files?.[0] || null)}
+          />
+        </label>
+        {editingId && form.thumbnail_url && !file && (
+          <img className="thumb-preview" src={form.thumbnail_url} alt="Thumbnail saat ini" />
+        )}
 
         {error && <p className="error">{error}</p>}
         {message && <p className="ok">{message}</p>}
