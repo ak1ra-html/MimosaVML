@@ -13,8 +13,6 @@ function lastSent() {
 }
 
 export default function RequestModal({ onClose }) {
-  const [name, setName] = useState('')
-  const [contact, setContact] = useState('')
   const [text, setText] = useState('')
   const [trap, setTrap] = useState('') // honeypot: manusia tidak mengisinya
   const [busy, setBusy] = useState(false)
@@ -52,11 +50,7 @@ export default function RequestModal({ onClose }) {
     }
 
     setBusy(true)
-    const { error: dbError } = await supabase.from('script_requests').insert({
-      requester_name: name.trim() || null,
-      contact: contact.trim() || null,
-      request_text: body,
-    })
+    const { error: dbError } = await supabase.from('script_requests').insert({ request_text: body })
     setBusy(false)
 
     if (dbError) {
@@ -77,7 +71,7 @@ export default function RequestModal({ onClose }) {
         {done ? (
           <>
             <h2>Request terkirim</h2>
-            <p className="muted">Terima kasih! Request kamu sudah masuk dan akan dicek oleh admin.</p>
+            <p className="muted">Terima kasih! Request kamu sudah masuk dan akan dilihat oleh admin.</p>
             <div className="row">
               <button type="button" className="btn btn-primary" onClick={onClose}>Tutup</button>
             </div>
@@ -100,22 +94,6 @@ export default function RequestModal({ onClose }) {
               />
               <span className="counter">{text.length}/500</span>
             </label>
-
-            <div className="grid2">
-              <label>
-                Nama (opsional)
-                <input maxLength={60} value={name} onChange={(e) => setName(e.target.value)} />
-              </label>
-              <label>
-                Kontak (opsional)
-                <input
-                  maxLength={100}
-                  value={contact}
-                  onChange={(e) => setContact(e.target.value)}
-                  placeholder="WhatsApp / IG / Discord"
-                />
-              </label>
-            </div>
 
             {/* honeypot */}
             <input
