@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { uploadImage } from '../lib/helpers.js'
 import VariantManager from './VariantManager.jsx'
 import RequestsManager from './RequestsManager.jsx'
+import FilePreview from './FilePreview.jsx'
 
 const EMPTY = { title: '', description: '', thumbnail_url: '', status: 'published', release_note: '' }
 
@@ -194,9 +195,7 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
               {editingId ? 'Ganti thumbnail (opsional)' : 'Upload thumbnail'}
               <input key={inputKey} type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
             </label>
-            {editingId && form.thumbnail_url && !file && (
-              <img className="thumb-preview" src={form.thumbnail_url} alt="Thumbnail saat ini" />
-            )}
+            <FilePreview file={file} current={editingId ? form.thumbnail_url : null} alt="Thumbnail script" />
 
             {error && <p className="error">{error}</p>}
             {message && <p className="ok">{message}</p>}

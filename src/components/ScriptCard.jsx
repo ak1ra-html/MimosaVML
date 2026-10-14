@@ -1,6 +1,5 @@
 export default function ScriptCard({ item, onOpen }) {
   const variants = item.script_variants || []
-  const total = variants.reduce((n, v) => n + (v.downloads ?? 0), 0)
   const cover = item.thumbnail_url || variants.find((v) => v.thumbnail_url)?.thumbnail_url
   const shown = variants.slice(0, 3)
 
@@ -32,8 +31,7 @@ export default function ScriptCard({ item, onOpen }) {
         )}
 
         <div className="card-foot">
-          <span className="count">{total} download</span>
-          <span className="btn btn-primary">Lihat replace</span>
+          <span className="btn btn-primary card-cta">Lihat replace</span>
         </div>
       </div>
     </article>

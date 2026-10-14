@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { supabase, safeUrl } from '../lib/supabase.js'
 import { normalizeUrl, uploadImage } from '../lib/helpers.js'
+import FilePreview from './FilePreview.jsx'
 
 const EMPTY = { replace_name: '', download_url: '', thumbnail_url: '' }
 
@@ -112,9 +113,7 @@ export default function VariantManager({ script, onChanged, onClose }) {
           {editingId ? 'Ganti gambar skin (opsional)' : 'Gambar skin replace (opsional)'}
           <input key={inputKey} type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
         </label>
-        {editingId && form.thumbnail_url && !file && (
-          <img className="thumb-preview" src={form.thumbnail_url} alt="Gambar saat ini" />
-        )}
+        <FilePreview file={file} current={editingId ? form.thumbnail_url : null} alt="Gambar replace" />
 
         {error && <p className="error">{error}</p>}
         {message && <p className="ok">{message}</p>}
