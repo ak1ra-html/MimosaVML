@@ -35,35 +35,3 @@ export async function uploadImage(raw) {
   if (error) throw error
   return supabase.storage.from('thumbnails').getPublicUrl(path).data.publicUrl
 }
-
-// Ambil ID video dari berbagai bentuk link YouTube (watch, youtu.be, shorts, embed, live).
-export function getYoutubeId(value) {
-  if (!value) return null
-  try {
-    const u = new URL(normalizeUrl(value))
-    const host = u.hostname.replace(/^www\./, '').replace(/^m\./, '')
-    let id = null
-    if (host === 'youtu.be') id = u.pathname.slice(1).split('/')[0]
-    else if (host === 'youtube.com' || host === 'youtube-nocookie.com') {
-      if (u.pathname === '/watch') id = u.searchParams.get('v')
-      else {
-        const m = u.pathname.match(/^\/(?:shorts|embed|live|v)\/([^/?]+)/)
-        if (m) id = m[1]
-      }
-    }
-    return id && /^[A-Za-z0-9_-]{6,15}$/.test(id) ? id : null
-  } catch {
-    return null
-  }
-}
-
-// Rapikan teks deskripsi: buang spasi di ujung baris dan baris kosong berlebihan.
-export function cleanDescription(value) {
-  return value
-    .replace(/\r\n/g, '\n')
-    .split('\n')
-    .map((l) => l.trimEnd())
-    .join('\n')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim()
-}

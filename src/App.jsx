@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, isConfigured } from './lib/supabase.js'
 import ScriptCard from './components/ScriptCard.jsx'
 import ScriptModal from './components/ScriptModal.jsx'
+import UpcomingCard from './components/UpcomingCard.jsx'
+import RequestModal from './components/RequestModal.jsx'
 import AdminLogin from './components/AdminLogin.jsx'
 import AdminPanel from './components/AdminPanel.jsx'
 
@@ -11,6 +13,7 @@ export default function App() {
   const [loadError, setLoadError] = useState('')
   const [query, setQuery] = useState('')
   const [openId, setOpenId] = useState(null)
+  const [showRequest, setShowRequest] = useState(false)
 
   const [isAdmin, setIsAdmin] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -48,6 +51,16 @@ export default function App() {
     load()
   }, [load])
 
+  // Pulihkan sesi admin jika sebelumnya sudah login.
+  useEffect(() => {
+    if (!isConfigured) return
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) return
+      const { data: ok } = await supabase.rpc('is_admin')
+      if (ok) setIsAdmin(true)
+    })
+  }, [])
+
   function onLogoTap() {
     const t = taps.current
     t.count += 1
@@ -60,12 +73,25 @@ export default function App() {
     }
   }
 
-  // Keluar dari admin. Dipakai juga oleh tombol "Tutup", jadi untuk
-  // masuk lagi admin harus memasukkan email dan password kembali.
   async function logout() {
     await supabase.auth.signOut()
     setIsAdmin(false)
     setShowPanel(false)
+  }
+
+  function handleDownload(variant) {
+    setScripts((list) =>
+      list.map((s) => ({
+        ...s,
+        script_variants: s.script_variants.map((v) =>
+          v.id === variant.id ? { ...v, downloads: (v.downloads ?? 0) + 1 } : v
+        ),
+      }))
+    )
+    // Query Supabase baru dikirim saat .then() dipanggil, jadi wajib ada.
+    supabase.rpc('increment_variant_downloads', { variant_id: variant.id }).then(({ error }) => {
+      if (error) console.error('Gagal mencatat download:', error.message)
+    })
   }
 
   const filtered = useMemo(() => {
@@ -77,6 +103,8 @@ export default function App() {
     })
   }, [scripts, query])
 
+  const published = filtered.filter((s) => s.status !== 'upcoming')
+  const upcoming = filtered.filter((s) => s.status === 'upcoming')
   const openScript = scripts.find((s) => s.id === openId)
 
   return (
@@ -86,13 +114,20 @@ export default function App() {
           <img className="logo-img" src="/logo.png" alt="" draggable="false" />
           <span className="logo-text">Mimosa<b>VML</b></span>
         </div>
-        <input
-          className="search"
-          type="search"
-          placeholder="Cari script atau replace..."
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-        />
+        <div className="top-actions">
+          <input
+            className="search"
+            type="search"
+            placeholder="Cari script atau replace..."
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+          />
+          {isConfigured && (
+            <button className="btn btn-request" onClick={() => setShowRequest(true)}>
+              Request Script
+            </button>
+          )}
+        </div>
       </header>
 
       {!isConfigured && (
@@ -106,7 +141,7 @@ export default function App() {
         <AdminPanel
           scripts={scripts}
           onChanged={load}
-          onClose={logout}
+          onClose={() => setShowPanel(false)}
           onLogout={logout}
         />
       )}
@@ -117,23 +152,39 @@ export default function App() {
         {!loading && !loadError && filtered.length === 0 && (
           <p className="muted center">{query ? 'Tidak ada hasil.' : 'Belum ada script.'}</p>
         )}
-        <div className="grid">
-          {filtered.map((item) => (
-            <ScriptCard key={item.id} item={item} onOpen={(s) => setOpenId(s.id)} />
-          ))}
-        </div>
+        {published.length > 0 && (
+          <div className="grid">
+            {published.map((item) => (
+              <ScriptCard key={item.id} item={item} onOpen={(s) => setOpenId(s.id)} />
+            ))}
+          </div>
+        )}
+
+        {upcoming.length > 0 && (
+          <section className="upcoming">
+            <h2 className="section-title">Segera hadir</h2>
+            <div className="grid">
+              {upcoming.map((item) => (
+                <UpcomingCard key={item.id} item={item} />
+              ))}
+            </div>
+          </section>
+        )}
       </main>
 
       <footer className="foot">
-        <p>MimosaVML.</p>
+        <p>MimosaVML. Gunakan dengan risiko sendiri.</p>
       </footer>
 
       {openScript && (
         <ScriptModal
           script={openScript}
           onClose={() => setOpenId(null)}
+          onDownload={handleDownload}
         />
       )}
+
+      {showRequest && <RequestModal onClose={() => setShowRequest(false)} />}
 
       {showLogin && (
         <AdminLogin

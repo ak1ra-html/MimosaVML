@@ -1,5 +1,6 @@
 export default function ScriptCard({ item, onOpen }) {
   const variants = item.script_variants || []
+  const total = variants.reduce((n, v) => n + (v.downloads ?? 0), 0)
   const cover = item.thumbnail_url || variants.find((v) => v.thumbnail_url)?.thumbnail_url
   const shown = variants.slice(0, 3)
 
@@ -15,12 +16,11 @@ export default function ScriptCard({ item, onOpen }) {
       <div className="card-thumb">
         {cover ? <img src={cover} alt={item.title} loading="lazy" /> : <div className="thumb-empty">Tanpa gambar</div>}
         <span className="badge">{variants.length ? `${variants.length} replace` : 'Belum ada replace'}</span>
-        {item.youtube_url && <span className="badge badge-yt">▶ Preview</span>}
       </div>
 
       <div className="card-body">
         <h3>{item.title}</h3>
-        {item.description && <p className="desc desc-clamp">{item.description}</p>}
+        {item.description && <p className="desc">{item.description}</p>}
 
         {shown.length > 0 && (
           <div className="chips">
@@ -32,6 +32,7 @@ export default function ScriptCard({ item, onOpen }) {
         )}
 
         <div className="card-foot">
+          <span className="count">{total} download</span>
           <span className="btn btn-primary">Lihat replace</span>
         </div>
       </div>

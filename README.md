@@ -6,13 +6,15 @@ Web katalog download script ML: thumbnail skin, judul script, nama replace, dan 
 
 - Satu kartu per script (mis. "Fanny Legend"). Saat diklik muncul daftar replace (Elite, dll), masing-nya dengan gambar skin dan tombol download
 - Pencarian berdasarkan judul atau replace
-- Link YouTube preview per script (video tampil di dalam jendela script)
+- Penghitung jumlah download
+- Upcoming: script yang belum rilis tampil di bagian "Segera hadir" tanpa tombol download. Saat sudah siap, tekan tombol **Rilis** di panel admin
+- Request Script: pengunjung mengirim request lewat tombol di header. Admin membacanya di tab **Request** (status Baru, Diproses, Selesai). Request tidak bisa dibaca publik
 - Admin tersembunyi: tambah, edit, hapus script, upload thumbnail
 
 ## 1. Setup Supabase
 
 1. Buat project di https://supabase.com
-2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace) dan `supabase/03-youtube-preview.sql` (kolom link YouTube)
+2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace), lalu `supabase/03-upcoming-requests.sql` (fitur Upcoming dan Request Script)
 3. Buka **Authentication > Users > Add user**, buat akun admin (email + password). Centang auto-confirm
 4. Kembali ke SQL Editor, daftarkan akun itu sebagai admin (ganti emailnya):
 
@@ -43,7 +45,7 @@ npm run dev
 
 ## Cara masuk admin (tombol rahasia)
 
-Ketuk atau klik **logo "Script ML Hub" 5 kali dengan cepat** (dalam 2 detik). Form login admin akan muncul. Setelah login, panel admin tampil di atas daftar script. Sesi login tidak disimpan: setiap halaman dibuka ulang, atau setelah menekan **Tutup** / **Keluar**, admin wajib memasukkan email dan password lagi.
+Ketuk atau klik **logo "Script ML Hub" 5 kali dengan cepat** (dalam 2 detik). Form login admin akan muncul. Setelah login, panel admin tampil di atas daftar script.
 
 Keamanan sebenarnya ada di Supabase, bukan di tombol tersembunyi. Orang yang menemukan form login tetap tidak bisa menambah atau mengubah data tanpa akun yang terdaftar di tabel `admins`, karena Row Level Security menolak semua penulisan dari akun lain. Anon key aman dipublikasikan di frontend, jangan pernah memakai `service_role` key di sini.
 
@@ -62,5 +64,5 @@ src/
   lib/helpers.js           upload gambar, normalisasi link
 supabase/schema.sql        tabel, RLS, storage
 supabase/02-replace-variants.sql   tabel replace (varian)
-supabase/03-youtube-preview.sql    kolom youtube_url
+supabase/03-upcoming-requests.sql  status upcoming + tabel request script
 ```

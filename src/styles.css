@@ -71,20 +71,9 @@ body {
 
 .card-body { padding: 14px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
 .card-body h3 { margin: 0; font-family: 'Rajdhani', sans-serif; font-size: 21px; font-weight: 700; line-height: 1.2; }
-.desc { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.5; white-space: pre-line; overflow-wrap: anywhere; }
-/* Di beranda deskripsi dipotong maksimal 4 baris supaya semua kartu rapi dan sejajar. */
-.desc-clamp {
-  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 4; line-clamp: 4;
-  overflow: hidden;
-}
-.card-foot { margin-top: auto; padding-top: 6px; display: flex; }
-.card-foot .btn { width: 100%; text-align: center; }
+.desc { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.45; }
+.card-foot { margin-top: auto; padding-top: 6px; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
 .count { color: var(--muted); font-size: 13px; }
-.badge-yt { left: auto; right: 10px; border-color: #ff4d4d; color: #ffd0d0; }
-.hint { color: var(--muted); font-size: 12px; opacity: .8; }
-.yt-wrap { position: relative; aspect-ratio: 16 / 9; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #000; margin-bottom: 14px; }
-.yt-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
-.yt-link { display: block; text-align: center; margin-bottom: 14px; }
 
 /* Buttons & forms */
 .btn {
@@ -181,9 +170,63 @@ code { background: rgba(255,255,255,.08); padding: 1px 6px; border-radius: 5px; 
 }
 .admin h4 { margin: 0; }
 
+/* Header: pencarian + tombol request */
+.top-actions { display: flex; align-items: center; gap: 10px; flex: 1 1 320px; justify-content: flex-end; flex-wrap: wrap; }
+.top-actions .search { flex: 1 1 200px; }
+.btn-request { border-color: #ffc933; color: #ffe27a; white-space: nowrap; }
+.btn-request:hover { background: rgba(255, 201, 51, .1); border-color: #ffc933; }
+
+/* Upcoming */
+.upcoming { margin-top: 34px; }
+.section-title { margin: 0 0 14px; font-family: 'Rajdhani', sans-serif; font-size: 24px; color: #ffe27a; }
+.card-upcoming:hover { transform: none; border-color: var(--line); }
+.card-upcoming .card-thumb img { filter: saturate(.55) brightness(.8); }
+.badge-soon { border-color: #ffc933; color: #ffe27a; }
+.chip-soon { border-color: #ffc933; color: #ffe27a; }
+
+/* Modal request */
+.modal-wide { max-width: 480px; }
+.small { font-size: 13px; margin: -6px 0 0; }
+.counter { align-self: flex-end; font-size: 12px; color: var(--muted); }
+.trap { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+
+/* Tab admin */
+.tabs { display: flex; gap: 8px; border-bottom: 1px solid var(--line); padding-bottom: 12px; }
+.tab {
+  padding: 8px 16px; border-radius: 10px; border: 1px solid var(--line); background: transparent;
+  color: var(--muted); font: inherit; font-weight: 600; font-size: 14px; cursor: pointer;
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.tab-on { background: var(--panel-2); color: var(--text); border-color: var(--accent); }
+.dot {
+  min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--danger);
+  color: #fff; font-size: 12px; display: inline-grid; place-items: center;
+}
+
+.tabs + .variants-box { border-top: 0; padding-top: 0; }
+
+/* Inbox request */
+.req {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px; border-radius: 10px;
+  background: var(--panel-2); border: 1px solid var(--line);
+}
+.req-new { border-left: 3px solid var(--danger); }
+.req-processing { border-left: 3px solid #ffc933; }
+.req-done { border-left: 3px solid var(--ok); opacity: .75; }
+.req-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.req-text { margin: 0; white-space: pre-wrap; word-break: break-word; }
+.req-meta { color: var(--muted); font-size: 12px; }
+
+select {
+  padding: 10px 12px; border-radius: 10px; background: var(--bg); border: 1px solid var(--line);
+  color: var(--text); font: inherit; width: 100%;
+}
+select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 .foot { text-align: center; color: var(--muted); font-size: 13px; padding-top: 36px; }
 
 @media (max-width: 560px) {
   .grid2 { grid-template-columns: 1fr; }
-  .admin-item { flex-wrap: wrap; }
+  .admin-item, .req { flex-wrap: wrap; }
+  .top-actions { justify-content: stretch; }
 }

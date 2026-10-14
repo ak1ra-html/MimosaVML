@@ -1,11 +1,8 @@
 import { useEffect } from 'react'
 import { safeUrl } from '../lib/supabase.js'
-import { getYoutubeId, normalizeUrl } from '../lib/helpers.js'
 
-export default function ScriptModal({ script, onClose }) {
+export default function ScriptModal({ script, onClose, onDownload }) {
   const variants = script.script_variants || []
-  const ytId = getYoutubeId(script.youtube_url)
-  const ytLink = script.youtube_url ? safeUrl(normalizeUrl(script.youtube_url)) : null
 
   useEffect(() => {
     const onKey = (e) => {
@@ -26,25 +23,6 @@ export default function ScriptModal({ script, onClose }) {
           <button className="btn" onClick={onClose}>Tutup</button>
         </div>
 
-        {ytId ? (
-          <div className="yt-wrap">
-            <iframe
-              src={`https://www.youtube-nocookie.com/embed/${ytId}`}
-              title={`Preview ${script.title}`}
-              loading="lazy"
-              allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen"
-              allowFullScreen
-              referrerPolicy="strict-origin-when-cross-origin"
-            />
-          </div>
-        ) : (
-          ytLink && (
-            <a className="btn yt-link" href={ytLink} target="_blank" rel="noopener noreferrer">
-              ▶ Lihat preview di YouTube
-            </a>
-          )
-        )}
-
         <div className="variant-list">
           {variants.map((v) => {
             const link = safeUrl(v.download_url)
@@ -58,6 +36,7 @@ export default function ScriptModal({ script, onClose }) {
                 )}
                 <div className="variant-text">
                   <strong>Replace {v.replace_name}</strong>
+                  <span>{v.downloads ?? 0} download</span>
                 </div>
                 {link ? (
                   <a
@@ -65,6 +44,7 @@ export default function ScriptModal({ script, onClose }) {
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={() => onDownload(v)}
                   >
                     Download
                   </a>

@@ -1,12 +1,15 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
-import { uploadImage, normalizeUrl, getYoutubeId, cleanDescription } from '../lib/helpers.js'
-import { safeUrl } from '../lib/supabase.js'
+import { uploadImage } from '../lib/helpers.js'
 import VariantManager from './VariantManager.jsx'
+import RequestsManager from './RequestsManager.jsx'
 
-const EMPTY = { title: '', description: '', thumbnail_url: '', youtube_url: '' }
+const EMPTY = { title: '', description: '', thumbnail_url: '', status: 'published', release_note: '' }
 
 export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
+  const [tab, setTab] = useState('scripts')
+  const [newRequests, setNewRequests] = useState(0)
+
   const [form, setForm] = useState(EMPTY)
   const [editingId, setEditingId] = useState(null)
   const [managingId, setManagingId] = useState(null)
@@ -18,6 +21,15 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
 
   const managing = scripts.find((s) => s.id === managingId)
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
+
+  // Jumlah request baru untuk badge pada tab.
+  useEffect(() => {
+    supabase
+      .from('script_requests')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'new')
+      .then(({ count }) => setNewRequests(count || 0))
+  }, [])
 
   function reset() {
     setForm(EMPTY)
@@ -36,7 +48,8 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
       title: item.title || '',
       description: item.description || '',
       thumbnail_url: item.thumbnail_url || '',
-      youtube_url: item.youtube_url || '',
+      status: item.status || 'published',
+      release_note: item.release_note || '',
     })
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
@@ -51,26 +64,18 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
       return
     }
 
-    let youtube_url = null
-    if (form.youtube_url.trim()) {
-      const link = safeUrl(normalizeUrl(form.youtube_url))
-      if (!link || !getYoutubeId(link)) {
-        setError('Link YouTube tidak valid. Contoh: https://youtu.be/xxxxxxxxxxx')
-        return
-      }
-      youtube_url = link
-    }
-
     setBusy(true)
     try {
       let thumbnail_url = form.thumbnail_url || null
       if (file) thumbnail_url = await uploadImage(file)
 
+      const upcoming = form.status === 'upcoming'
       const payload = {
         title: form.title.trim(),
-        description: cleanDescription(form.description) || null,
+        description: form.description.trim() || null,
         thumbnail_url,
-        youtube_url,
+        status: form.status,
+        release_note: upcoming ? form.release_note.trim() || null : null,
       }
 
       if (editingId) {
@@ -84,14 +89,34 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
         if (dbError) throw dbError
         reset()
         await onChanged()
-        setManagingId(data.id)
-        setMessage('Script ditambahkan. Sekarang tambahkan replace-nya di bawah.')
+        if (upcoming) {
+          setMessage('Script upcoming ditambahkan. Kalau sudah rilis, tekan tombol "Rilis" pada daftar.')
+        } else {
+          setManagingId(data.id)
+          setMessage('Script ditambahkan. Sekarang tambahkan replace-nya di bawah.')
+        }
       }
     } catch (err) {
       setError(err.message || 'Gagal menyimpan.')
     } finally {
       setBusy(false)
     }
+  }
+
+  // Ubah upcoming menjadi script yang sudah rilis, lalu langsung isi replace-nya.
+  async function release(item) {
+    const { error: dbError } = await supabase
+      .from('scripts')
+      .update({ status: 'published', release_note: null })
+      .eq('id', item.id)
+    if (dbError) {
+      setError(dbError.message)
+      return
+    }
+    setError('')
+    await onChanged()
+    setManagingId(item.id)
+    setMessage(`"${item.title}" sudah dirilis. Tambahkan replace-nya di bawah.`)
   }
 
   async function remove(item) {
@@ -118,80 +143,118 @@ export default function AdminPanel({ scripts, onChanged, onClose, onLogout }) {
         </div>
       </div>
 
-      <form className="admin-form" onSubmit={submit}>
-        <h3>{editingId ? 'Edit script' : 'Tambah script baru'}</h3>
-
-        <label>
-          Judul script
-          <input value={form.title} onChange={set('title')} placeholder="Fanny Legend" required />
-        </label>
-
-        <label>
-          Deskripsi (opsional)
-          <textarea
-            rows="4"
-            value={form.description}
-            onChange={set('description')}
-            placeholder={'Fanny Legend Hack Stack 0-400\nHarga? Klik Download untuk menanyakan harga'}
-          />
-          <small className="hint">Tekan Enter untuk pindah baris. Setiap baris tampil terpisah di beranda.</small>
-        </label>
-
-        <label>
-          Link YouTube preview (opsional)
-          <input
-            value={form.youtube_url}
-            onChange={set('youtube_url')}
-            placeholder="https://youtu.be/xxxxxxxxxxx"
-          />
-          <small className="hint">Video ini tampil sebagai preview hasil saat kartu script dibuka.</small>
-        </label>
-
-        <label>
-          {editingId ? 'Ganti thumbnail (opsional)' : 'Upload thumbnail'}
-          <input key={inputKey} type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
-        </label>
-        {editingId && form.thumbnail_url && !file && (
-          <img className="thumb-preview" src={form.thumbnail_url} alt="Thumbnail saat ini" />
-        )}
-
-        {error && <p className="error">{error}</p>}
-        {message && <p className="ok">{message}</p>}
-
-        <div className="row">
-          {editingId && <button type="button" className="btn" onClick={reset}>Batal edit</button>}
-          <button className="btn btn-primary" disabled={busy}>
-            {busy ? 'Menyimpan...' : editingId ? 'Simpan perubahan' : 'Tambah script'}
-          </button>
-        </div>
-      </form>
-
-      {managing && (
-        <VariantManager
-          key={managing.id}
-          script={managing}
-          onChanged={onChanged}
-          onClose={() => setManagingId(null)}
-        />
-      )}
-
-      <div className="admin-list">
-        {scripts.map((item) => (
-          <div className="admin-item" key={item.id}>
-            {item.thumbnail_url ? <img src={item.thumbnail_url} alt="" /> : <div className="mini-empty" />}
-            <div className="admin-item-text">
-              <strong>{item.title}</strong>
-              <span>{(item.script_variants || []).length} replace</span>
-            </div>
-            <div className="row">
-              <button className="btn btn-primary" onClick={() => { setManagingId(item.id); setMessage('') }}>Replace</button>
-              <button className="btn" onClick={() => startEdit(item)}>Edit</button>
-              <button className="btn btn-danger" onClick={() => remove(item)}>Hapus</button>
-            </div>
-          </div>
-        ))}
-        {scripts.length === 0 && <p className="muted">Belum ada script.</p>}
+      <div className="tabs">
+        <button className={`tab ${tab === 'scripts' ? 'tab-on' : ''}`} onClick={() => setTab('scripts')}>
+          Script
+        </button>
+        <button className={`tab ${tab === 'requests' ? 'tab-on' : ''}`} onClick={() => setTab('requests')}>
+          Request{newRequests > 0 && <span className="dot">{newRequests}</span>}
+        </button>
       </div>
+
+      {tab === 'requests' && <RequestsManager onCount={setNewRequests} />}
+
+      {tab === 'scripts' && (
+        <>
+          <form className="admin-form" onSubmit={submit}>
+            <h3>{editingId ? 'Edit script' : 'Tambah script baru'}</h3>
+
+            <div className="grid2">
+              <label>
+                Judul script
+                <input value={form.title} onChange={set('title')} placeholder="Fanny Legend" required />
+              </label>
+              <label>
+                Status
+                <select value={form.status} onChange={set('status')}>
+                  <option value="published">Sudah rilis</option>
+                  <option value="upcoming">Upcoming (segera hadir)</option>
+                </select>
+              </label>
+            </div>
+
+            {form.status === 'upcoming' && (
+              <label>
+                Keterangan rilis (opsional)
+                <input
+                  value={form.release_note}
+                  onChange={set('release_note')}
+                  maxLength={60}
+                  placeholder="Contoh: Rilis minggu depan"
+                />
+              </label>
+            )}
+
+            <label>
+              Deskripsi (opsional)
+              <textarea rows="2" value={form.description} onChange={set('description')} />
+            </label>
+
+            <label>
+              {editingId ? 'Ganti thumbnail (opsional)' : 'Upload thumbnail'}
+              <input key={inputKey} type="file" accept="image/*" onChange={(e) => setFile(e.target.files?.[0] || null)} />
+            </label>
+            {editingId && form.thumbnail_url && !file && (
+              <img className="thumb-preview" src={form.thumbnail_url} alt="Thumbnail saat ini" />
+            )}
+
+            {error && <p className="error">{error}</p>}
+            {message && <p className="ok">{message}</p>}
+
+            <div className="row">
+              {editingId && <button type="button" className="btn" onClick={reset}>Batal edit</button>}
+              <button className="btn btn-primary" disabled={busy}>
+                {busy ? 'Menyimpan...' : editingId ? 'Simpan perubahan' : 'Tambah script'}
+              </button>
+            </div>
+          </form>
+
+          {managing && (
+            <VariantManager
+              key={managing.id}
+              script={managing}
+              onChanged={onChanged}
+              onClose={() => setManagingId(null)}
+            />
+          )}
+
+          <div className="admin-list">
+            {scripts.map((item) => {
+              const upcoming = item.status === 'upcoming'
+              return (
+                <div className="admin-item" key={item.id}>
+                  {item.thumbnail_url ? <img src={item.thumbnail_url} alt="" /> : <div className="mini-empty" />}
+                  <div className="admin-item-text">
+                    <strong>{item.title}</strong>
+                    <span>
+                      {upcoming ? 'Upcoming' : `${(item.script_variants || []).length} replace`}
+                      {upcoming && item.release_note ? ` • ${item.release_note}` : ''}
+                    </span>
+                  </div>
+                  <div className="row">
+                    {upcoming ? (
+                      <button className="btn btn-primary" onClick={() => release(item)}>Rilis</button>
+                    ) : (
+                      <button
+                        className="btn btn-primary"
+                        onClick={() => {
+                          setManagingId(item.id)
+                          setMessage('')
+                        }}
+                      >
+                        Replace
+                      </button>
+                    )}
+                    <button className="btn" onClick={() => startEdit(item)}>Edit</button>
+                    <button className="btn btn-danger" onClick={() => remove(item)}>Hapus</button>
+                  </div>
+                </div>
+              )
+            })}
+            {scripts.length === 0 && <p className="muted">Belum ada script.</p>}
+          </div>
+        </>
+      )}
     </section>
   )
 }
