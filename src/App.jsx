@@ -1,9 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { supabase, isConfigured } from './lib/supabase.js'
 import ScriptCard from './components/ScriptCard.jsx'
-import ScriptModal from './components/ScriptModal.jsx'
-import UpcomingCard from './components/UpcomingCard.jsx'
-import RequestModal from './components/RequestModal.jsx'
 import AdminLogin from './components/AdminLogin.jsx'
 import AdminPanel from './components/AdminPanel.jsx'
 
@@ -12,8 +9,6 @@ export default function App() {
   const [loading, setLoading] = useState(true)
   const [loadError, setLoadError] = useState('')
   const [query, setQuery] = useState('')
-  const [openId, setOpenId] = useState(null)
-  const [showRequest, setShowRequest] = useState(false)
 
   const [isAdmin, setIsAdmin] = useState(false)
   const [showLogin, setShowLogin] = useState(false)
@@ -29,20 +24,12 @@ export default function App() {
     }
     const { data, error } = await supabase
       .from('scripts')
-      .select('*, script_variants(*)')
+      .select('*')
       .order('created_at', { ascending: false })
-    if (error) {
-      setLoadError(error.message)
-    } else {
+    if (error) setLoadError(error.message)
+    else {
       setLoadError('')
-      setScripts(
-        data.map((s) => ({
-          ...s,
-          script_variants: [...(s.script_variants || [])].sort(
-            (a, b) => new Date(a.created_at) - new Date(b.created_at)
-          ),
-        }))
-      )
+      setScripts(data)
     }
     setLoading(false)
   }, [])
@@ -57,7 +44,9 @@ export default function App() {
     supabase.auth.getSession().then(async ({ data }) => {
       if (!data.session) return
       const { data: ok } = await supabase.rpc('is_admin')
-      if (ok) setIsAdmin(true)
+      if (ok) {
+        setIsAdmin(true)
+      }
     })
   }, [])
 
@@ -79,55 +68,31 @@ export default function App() {
     setShowPanel(false)
   }
 
-  function handleDownload(variant) {
-    setScripts((list) =>
-      list.map((s) => ({
-        ...s,
-        script_variants: s.script_variants.map((v) =>
-          v.id === variant.id ? { ...v, downloads: (v.downloads ?? 0) + 1 } : v
-        ),
-      }))
-    )
-    // Query Supabase baru dikirim saat .then() dipanggil, jadi wajib ada.
-    supabase.rpc('increment_variant_downloads', { variant_id: variant.id }).then(({ error }) => {
-      if (error) console.error('Gagal mencatat download:', error.message)
-    })
+  async function handleDownload(item) {
+    setScripts((list) => list.map((s) => (s.id === item.id ? { ...s, downloads: (s.downloads ?? 0) + 1 } : s)))
+    supabase.rpc('increment_downloads', { script_id: item.id })
   }
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase()
     if (!q) return scripts
-    return scripts.filter((s) => {
-      const names = (s.script_variants || []).map((v) => v.replace_name).join(' ')
-      return `${s.title} ${names}`.toLowerCase().includes(q)
-    })
+    return scripts.filter((s) => `${s.title} ${s.replace_name || ''}`.toLowerCase().includes(q))
   }, [scripts, query])
-
-  const published = filtered.filter((s) => s.status !== 'upcoming')
-  const upcoming = filtered.filter((s) => s.status === 'upcoming')
-  const openScript = scripts.find((s) => s.id === openId)
 
   return (
     <div className="app">
       <header className="top">
-        <div className="logo" onClick={onLogoTap} role="img" aria-label="MimosaVML">
-          <img className="logo-img" src="/logo.png" alt="" draggable="false" />
-          <span className="logo-text">Mimosa<b>VML</b></span>
+        <div className="logo" onClick={onLogoTap} role="img" aria-label="Script ML Hub">
+          <span className="logo-mark">S</span>
+          <span className="logo-text">Script ML <b>Hub</b></span>
         </div>
-        <div className="top-actions">
-          <input
-            className="search"
-            type="search"
-            placeholder="Cari script atau replace..."
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
-          {isConfigured && (
-            <button className="btn btn-request" onClick={() => setShowRequest(true)}>
-              Request Script
-            </button>
-          )}
-        </div>
+        <input
+          className="search"
+          type="search"
+          placeholder="Cari script atau replace..."
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </header>
 
       {!isConfigured && (
@@ -152,39 +117,16 @@ export default function App() {
         {!loading && !loadError && filtered.length === 0 && (
           <p className="muted center">{query ? 'Tidak ada hasil.' : 'Belum ada script.'}</p>
         )}
-        {published.length > 0 && (
-          <div className="grid">
-            {published.map((item) => (
-              <ScriptCard key={item.id} item={item} onOpen={(s) => setOpenId(s.id)} />
-            ))}
-          </div>
-        )}
-
-        {upcoming.length > 0 && (
-          <section className="upcoming">
-            <h2 className="section-title">Segera hadir</h2>
-            <div className="grid">
-              {upcoming.map((item) => (
-                <UpcomingCard key={item.id} item={item} />
-              ))}
-            </div>
-          </section>
-        )}
+        <div className="grid">
+          {filtered.map((item) => (
+            <ScriptCard key={item.id} item={item} onDownload={handleDownload} />
+          ))}
+        </div>
       </main>
 
       <footer className="foot">
-        <p>MimosaVML. Gunakan dengan risiko sendiri.</p>
+        <p>Script ML Hub. Gunakan dengan risiko sendiri.</p>
       </footer>
-
-      {openScript && (
-        <ScriptModal
-          script={openScript}
-          onClose={() => setOpenId(null)}
-          onDownload={handleDownload}
-        />
-      )}
-
-      {showRequest && <RequestModal onClose={() => setShowRequest(false)} />}
 
       {showLogin && (
         <AdminLogin
