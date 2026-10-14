@@ -51,14 +51,10 @@ export default function App() {
     load()
   }, [load])
 
-  // Pulihkan sesi admin jika sebelumnya sudah login.
+  // Keamanan: sesi admin tidak pernah dipulihkan. Setiap halaman dibuka/di-refresh,
+  // sesi lama yang tersisa di browser dihapus, jadi login harus diulang.
   useEffect(() => {
-    if (!isConfigured) return
-    supabase.auth.getSession().then(async ({ data }) => {
-      if (!data.session) return
-      const { data: ok } = await supabase.rpc('is_admin')
-      if (ok) setIsAdmin(true)
-    })
+    if (isConfigured) supabase.auth.signOut()
   }, [])
 
   function onLogoTap() {
@@ -68,8 +64,7 @@ export default function App() {
     t.timer = setTimeout(() => (t.count = 0), 2000)
     if (t.count >= 5) {
       t.count = 0
-      if (isAdmin) setShowPanel(true)
-      else setShowLogin(true)
+      if (!showPanel) setShowLogin(true)
     }
   }
 
@@ -133,7 +128,7 @@ export default function App() {
         <AdminPanel
           scripts={scripts}
           onChanged={load}
-          onClose={() => setShowPanel(false)}
+          onClose={logout}
           onLogout={logout}
         />
       )}

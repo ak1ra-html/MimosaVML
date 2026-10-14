@@ -46,7 +46,7 @@ npm run dev
 
 ## Cara masuk admin (tombol rahasia)
 
-Ketuk atau klik **logo "Script ML Hub" 5 kali dengan cepat** (dalam 2 detik). Form login admin akan muncul. Setelah login, panel admin tampil di atas daftar script.
+Ketuk atau klik **logo "Script ML Hub" 5 kali dengan cepat** (dalam 2 detik). Form login admin akan muncul. Setelah login, panel admin tampil di atas daftar script. Demi keamanan, sesi admin **tidak disimpan**: menutup panel (tombol Tutup atau Keluar) atau me-refresh halaman otomatis keluar dari akun, sehingga email dan password harus dimasukkan lagi setiap kali masuk.
 
 Keamanan sebenarnya ada di Supabase, bukan di tombol tersembunyi. Orang yang menemukan form login tetap tidak bisa menambah atau mengubah data tanpa akun yang terdaftar di tabel `admins`, karena Row Level Security menolak semua penulisan dari akun lain. Anon key aman dipublikasikan di frontend, jangan pernah memakai `service_role` key di sini.
 
