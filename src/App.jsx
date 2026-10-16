@@ -6,6 +6,7 @@ import UpcomingCard from './components/UpcomingCard.jsx'
 import RequestModal from './components/RequestModal.jsx'
 import AdminLogin from './components/AdminLogin.jsx'
 import AdminPanel from './components/AdminPanel.jsx'
+import SocialLinks from './components/SocialLinks.jsx'
 
 export default function App() {
   const [scripts, setScripts] = useState([])
@@ -114,6 +115,7 @@ export default function App() {
               Request Script
             </button>
           )}
+          <SocialLinks variant="icon" />
         </div>
       </header>
 
@@ -160,6 +162,8 @@ export default function App() {
       </main>
 
       <footer className="foot">
+        <p className="foot-title">Ikuti MimosaVML untuk update script terbaru</p>
+        <SocialLinks variant="full" />
         <p>MimosaVML. Gunakan dengan risiko sendiri.</p>
       </footer>
 

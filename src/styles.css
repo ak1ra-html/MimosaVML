@@ -265,3 +265,31 @@ select:focus { outline: 2px solid var(--accent); outline-offset: 1px; }
 }
 
 .card-foot .btn-primary { flex: 1; text-align: center; }
+
+/* Gratis / Berbayar */
+.tag {
+  align-self: flex-start; padding: 1px 8px; border-radius: 999px; font-size: 12px; font-weight: 600;
+  border: 1px solid var(--line); color: var(--muted);
+}
+.tag-free { color: var(--ok); border-color: rgba(61, 220, 151, .45); }
+.tag-paid { color: #ffe27a; border-color: rgba(255, 201, 51, .5); }
+.btn-buy {
+  background: linear-gradient(135deg, #ffc933, #ff9f43); border-color: transparent; color: #1a1300;
+}
+.btn-buy:hover { border-color: #fff3c4; }
+.variant .btn { flex-shrink: 0; min-width: 92px; text-align: center; }
+
+/* Media sosial */
+.socials { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.social {
+  display: inline-flex; align-items: center; gap: 8px; color: var(--text); text-decoration: none;
+  border: 1px solid var(--line); background: var(--panel); font-weight: 600; font-size: 14px;
+}
+.social:hover { border-color: currentColor; }
+.social:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.social-whatsapp:hover { color: #25d366; }
+.socials-icon .social { width: 42px; height: 42px; justify-content: center; border-radius: 10px; }
+.socials-full { justify-content: center; margin-top: 12px; }
+.socials-full .social { padding: 9px 16px; border-radius: 10px; }
+.foot-title { margin: 0; color: var(--text); font-weight: 600; font-size: 15px; }
+.foot p:last-child { margin-top: 20px; }

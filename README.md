@@ -10,12 +10,14 @@ Web katalog download script ML: thumbnail skin, judul script, nama replace, dan 
 - Request Script: pengunjung mengirim request lewat tombol di header. Admin membacanya di tab **Request** (status Baru, Diproses, Selesai). Request tidak bisa dibaca publik
 - Preview video YouTube: isi link YouTube di form script, maka di jendela detail muncul pemutar video (dimuat saat diklik, jadi halaman tetap ringan). Kartu yang punya video diberi label "Preview" di pojok kanan bawah gambar
 - Deskripsi mendukung baris baru dan paragraf (tekan Enter saat menulis)
+- Replace Gratis atau Berbayar: replace gratis memakai tombol **Download**, replace berbayar memakai tombol **Buy** (link beli, mis. chat WhatsApp). Diatur lewat pilihan **Jenis** di panel admin
+- Tombol Saluran WhatsApp di header dan footer. Ganti link-nya di `src/lib/links.js`
 - Admin tersembunyi: tambah, edit, hapus script, upload thumbnail
 
 ## 1. Setup Supabase
 
 1. Buat project di https://supabase.com
-2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace), lalu `supabase/03-upcoming-requests.sql` (fitur Upcoming dan Request Script), dan terakhir `supabase/04-youtube-preview.sql` (kolom link YouTube)
+2. Buka **SQL Editor**, tempel isi `supabase/schema.sql`, lalu **Run**. Setelah itu jalankan juga `supabase/02-replace-variants.sql` (membuat tabel replace, satu script bisa punya banyak replace), lalu `supabase/03-upcoming-requests.sql` (fitur Upcoming dan Request Script), dan lalu `supabase/04-youtube-preview.sql` (kolom link YouTube), dan terakhir `supabase/05-free-or-paid.sql` (replace Gratis/Berbayar)
 3. Buka **Authentication > Users > Add user**, buat akun admin (email + password). Centang auto-confirm
 4. Kembali ke SQL Editor, daftarkan akun itu sebagai admin (ganti emailnya):
 
@@ -59,13 +61,16 @@ src/
     ScriptCard.jsx         kartu script
     ScriptModal.jsx        daftar replace + tombol download + preview video
     YouTubePreview.jsx     pemutar YouTube (klik untuk memuat)
+    SocialLinks.jsx        tombol medsos (header + footer)
     AdminLogin.jsx         form login admin
     AdminPanel.jsx         tambah / edit / hapus script
     VariantManager.jsx     tambah / edit / hapus replace per script
   lib/supabase.js          klien Supabase
   lib/helpers.js           upload gambar, normalisasi link
+  lib/links.js             daftar link medsos
 supabase/schema.sql        tabel, RLS, storage
 supabase/02-replace-variants.sql   tabel replace (varian)
 supabase/03-upcoming-requests.sql  status upcoming + tabel request script
 supabase/04-youtube-preview.sql    kolom link YouTube
+supabase/05-free-or-paid.sql       kolom is_free (Gratis/Berbayar)
 ```

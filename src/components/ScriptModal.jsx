@@ -32,6 +32,7 @@ export default function ScriptModal({ script, onClose, onDownload }) {
           {variants.map((v) => {
             const link = safeUrl(v.download_url)
             const img = v.thumbnail_url || script.thumbnail_url
+            const free = v.is_free !== false
             return (
               <div className="variant" key={v.id}>
                 {img ? (
@@ -41,16 +42,17 @@ export default function ScriptModal({ script, onClose, onDownload }) {
                 )}
                 <div className="variant-text">
                   <strong>Replace {v.replace_name}</strong>
+                  <span className={`tag ${free ? 'tag-free' : 'tag-paid'}`}>{free ? 'Gratis' : 'Berbayar'}</span>
                 </div>
                 {link ? (
                   <a
-                    className="btn btn-primary"
+                    className={`btn ${free ? 'btn-primary' : 'btn-buy'}`}
                     href={link}
                     target="_blank"
                     rel="noopener noreferrer"
-                    onClick={() => onDownload(v)}
+                    onClick={() => free && onDownload(v)}
                   >
-                    Download
+                    {free ? 'Download' : 'Buy'}
                   </a>
                 ) : (
                   <span className="count">Link tidak valid</span>

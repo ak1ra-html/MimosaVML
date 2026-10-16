@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { supabase, safeUrl } from '../lib/supabase.js'
 import { normalizeUrl, uploadImage } from '../lib/helpers.js'
 
-const EMPTY = { replace_name: '', download_url: '', thumbnail_url: '' }
+const EMPTY = { replace_name: '', download_url: '', thumbnail_url: '', is_free: true }
 
 export default function VariantManager({ script, onChanged, onClose }) {
   const variants = script.script_variants || []
@@ -33,6 +33,7 @@ export default function VariantManager({ script, onChanged, onClose }) {
       replace_name: v.replace_name || '',
       download_url: v.download_url || '',
       thumbnail_url: v.thumbnail_url || '',
+      is_free: v.is_free !== false,
     })
   }
 
@@ -43,7 +44,7 @@ export default function VariantManager({ script, onChanged, onClose }) {
 
     const downloadUrl = safeUrl(normalizeUrl(form.download_url))
     if (!downloadUrl) {
-      setError('Link download tidak valid.')
+      setError(form.is_free ? 'Link download tidak valid.' : 'Link beli tidak valid.')
       return
     }
 
@@ -56,6 +57,7 @@ export default function VariantManager({ script, onChanged, onClose }) {
         replace_name: form.replace_name.trim(),
         download_url: downloadUrl,
         thumbnail_url,
+        is_free: form.is_free,
       }
 
       const query = editingId
@@ -103,10 +105,26 @@ export default function VariantManager({ script, onChanged, onClose }) {
             <input value={form.replace_name} onChange={set('replace_name')} placeholder="Elite" required />
           </label>
           <label>
-            Link download
-            <input value={form.download_url} onChange={set('download_url')} placeholder="mediafire.com/..." required />
+            Jenis
+            <select
+              value={form.is_free ? 'free' : 'paid'}
+              onChange={(e) => setForm((f) => ({ ...f, is_free: e.target.value === 'free' }))}
+            >
+              <option value="free">Gratis (tombol Download)</option>
+              <option value="paid">Berbayar (tombol Buy)</option>
+            </select>
           </label>
         </div>
+
+        <label>
+          {form.is_free ? 'Link download' : 'Link beli (mis. chat WhatsApp)'}
+          <input
+            value={form.download_url}
+            onChange={set('download_url')}
+            placeholder={form.is_free ? 'mediafire.com/...' : 'wa.me/628xxxxxxxxxx'}
+            required
+          />
+        </label>
 
         <label>
           {editingId ? 'Ganti gambar skin (opsional)' : 'Gambar skin replace (opsional)'}
@@ -135,6 +153,7 @@ export default function VariantManager({ script, onChanged, onClose }) {
             {v.thumbnail_url ? <img src={v.thumbnail_url} alt="" /> : <div className="mini-empty" />}
             <div className="admin-item-text">
               <strong>Replace {v.replace_name}</strong>
+              <span>{v.is_free !== false ? 'Gratis' : 'Berbayar'}</span>
             </div>
             <div className="row">
               <button className="btn" onClick={() => startEdit(v)}>Edit</button>
