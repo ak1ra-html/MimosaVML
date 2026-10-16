@@ -164,7 +164,7 @@ export default function App() {
       <footer className="foot">
         <p className="foot-title">Ikuti MimosaVML untuk update script terbaru</p>
         <SocialLinks variant="full" />
-        <p>MimosaVML. Gunakan dengan risiko sendiri.</p>
+        <p>MimosaVML.</p>
       </footer>
 
       {openScript && (
